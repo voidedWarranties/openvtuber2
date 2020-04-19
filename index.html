@@ -10,6 +10,7 @@
   <div id="options">
     <ul>
       <li><input class="option" id="auto-blink" type="checkbox" checked> Automatically Blink</li>
+      <li><input class="option" id="facemesh" type="checkbox" checked> Enable FaceMesh Detection</li>
       <li><input class="option" id="posenet" type="checkbox"> Enable PoseNet Detection</li>
       <li><input class="option" id="handpose" type="checkbox"> Enable HandPose Detection</li>
     </ul>
@@ -80,6 +81,7 @@
     const options = new OptionsManager();
 
     options.linkHide("auto-blink", [document.getElementById("blink-options")], false);
+    options.linkHide("facemesh", [overlay]);
     options.linkHide("posenet", [overlay2]);
     options.linkHide("handpose", [overlay3]);
 
@@ -198,7 +200,7 @@
 
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-      workerManager.postMessage("facemesh", imageData);
+      if (options.get("facemesh")) workerManager.postMessage("facemesh", imageData);
 
       if (options.get("posenet")) workerManager.postMessage("posenet", imageData);
 

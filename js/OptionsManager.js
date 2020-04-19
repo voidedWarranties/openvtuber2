@@ -11,13 +11,13 @@ class OptionsManager {
         }
     }
 
-    linkHide(name, elements, checked) {
+    linkHide(name, elements, checked = true) {
         const optionElem = this.options[name];
 
         if (optionElem && optionElem.type === "checkbox") {
             optionElem.addEventListener("change", () => {
                 elements.forEach(elem => {
-                    elem.display = optionElem.checked === checked ? "" : "none";
+                    elem.style.display = optionElem.checked === checked ? "" : "none";
                 });
             });
         }

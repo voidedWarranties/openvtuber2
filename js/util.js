@@ -97,10 +97,24 @@ function drawHand(data, overlayCtx, color) {
 
         for (var key in hand.annotations) {
             if (!hand.annotations.hasOwnProperty(key)) continue;
+
+            var points = hand.annotations[key];
+            points.unshift(hand.landmarks[0]);
     
-            drawPolyline(overlayCtx, hand.annotations[key], 1, color);
+            drawPolyline(overlayCtx, points, 1, color);
         }
     });
+}
+
+function pointToVec(p) {
+    return new THREE.Vector3(p[0], p[1], p[2]);
+}
+
+function getAngle(a1, vertex, a2) {
+    const v1 = a1.clone().sub(vertex).normalize();
+    const v2 = a2.clone().sub(vertex).normalize();
+
+    return Math.acos(v1.dot(v2));
 }
 
 // FaceMesh
