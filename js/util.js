@@ -222,13 +222,3 @@ function linkInputs(inputs) {
         }
     }
 }
-
-function linkHide(input, elements, checked = true) {
-    if (input.type === "checkbox") {
-        input.onchange = e => {
-            elements.forEach(element => {
-                element.style.display = input.checked === checked ? "" : "none";
-            });
-        }
-    }
-}

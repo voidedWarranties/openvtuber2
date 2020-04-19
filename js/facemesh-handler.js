@@ -41,7 +41,7 @@ function facemeshMessage(e) {
             vrmManager.setPreset(Preset.A, head.mouth);
         }, "head", null, 100);
 
-        if (inputs.blink.checked) {
+        if (options.get("auto-blink")) {
             if (Date.now() > nextBlinkTS) {
                 vrmManager.setPreset(Preset.Blink, 1);
                 nextBlinkTS = Date.now() + random(5000, 8000);

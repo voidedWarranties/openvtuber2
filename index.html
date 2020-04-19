@@ -9,9 +9,9 @@
 <body>
   <div id="options">
     <ul>
-      <li><input id="auto-blink" type="checkbox" checked> Automatically Blink</li>
-      <li><input id="posenet" type="checkbox"> Enable PoseNet Detection</li>
-      <li><input id="handpose" type="checkbox"> Enable HandPose Detection</li>
+      <li><input class="option" id="auto-blink" type="checkbox" checked> Automatically Blink</li>
+      <li><input class="option" id="posenet" type="checkbox"> Enable PoseNet Detection</li>
+      <li><input class="option" id="handpose" type="checkbox"> Enable HandPose Detection</li>
     </ul>
 
     <div id="peerjs">
@@ -27,6 +27,8 @@
       <br>
       <button onclick="resetEye()">Reset Eye Data</button>
     </div>
+
+    <button onclick="window.localStorage.clear()">Clear local storage</button>
   </div>
 
   <div id="content">
@@ -53,6 +55,7 @@
   <script src="js/VRMManager.js"></script>
 
   <script src="js/WorkerManager.js"></script>
+  <script src="js/OptionsManager.js"></script>
   <script src="js/facemesh-handler.js"></script>
   <script src="js/posenet-handler.js"></script>
   <script src="js/handpose-handler.js"></script>
@@ -74,17 +77,15 @@
     const leftEyeCanvas = document.getElementById("left-eye");
     const leftEyeCtx = leftEyeCanvas.getContext("2d");
 
-    const inputs = {
-      blink: document.getElementById("auto-blink"),
-      posenet: document.getElementById("posenet"),
-      handpose: document.getElementById("handpose")
-    };
+    const options = new OptionsManager();
 
-    linkHide(inputs.blink, [document.getElementById("blink-options")], false);
-    linkHide(inputs.posenet, [overlay2]);
-    linkHide(inputs.handpose, [overlay3]);
+    options.linkHide("auto-blink", [document.getElementById("blink-options")], false);
+    options.linkHide("posenet", [overlay2]);
+    options.linkHide("handpose", [overlay3]);
 
-    linkInputs(inputs);
+    options.linkRanges();
+
+    options.load();
 
     const video = document.getElementById("camera");
     video.width = 640;
@@ -199,9 +200,9 @@
 
       workerManager.postMessage("facemesh", imageData);
 
-      if (inputs.posenet.checked) workerManager.postMessage("posenet", imageData);
+      if (options.get("posenet")) workerManager.postMessage("posenet", imageData);
 
-      if (inputs.handpose.checked) workerManager.postMessage("handpose", imageData);
+      if (options.get("handpose")) workerManager.postMessage("handpose", imageData);
 
       // VRM
       //////
