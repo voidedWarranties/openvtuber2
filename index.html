@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>weeb</title>
+  <link rel="stylesheet" type="text/css" href="css/index.css">
+</head>
+
+<body>
+  <div id="options">
+    <ul>
+      <li><input id="auto-blink" type="checkbox" checked> Automatically Blink</li>
+      <li><input id="posenet" type="checkbox"> Enable PoseNet Detection</li>
+      <li><input id="handpose" type="checkbox"> Enable HandPose Detection</li>
+    </ul>
+
+    <div id="peerjs">
+      <input id="dest-id" type="text" placeholder="Peer Connection ID">
+      <button onclick="call()">Call</button>
+    </div>
+    
+    <br>
+
+    <div id="blink-options" style="display: none;">
+      <canvas id="right-eye"></canvas>
+      <canvas id="left-eye"></canvas>
+      <br>
+      <button onclick="resetEye()">Reset Eye Data</button>
+    </div>
+  </div>
+
+  <div id="content">
+    <canvas id="model"></canvas>
+    <video id="camera" style="display: none;" playsinline autoplay muted></video>
+    <div id="camera">
+      <canvas id="webcam"></canvas>
+      <canvas id="overlay"></canvas>
+      <canvas id="overlay2"></canvas>
+      <canvas id="overlay3"></canvas>
+    </div>
+  </div>
+
+  <script src="js/three/three.js"></script>
+  <script src="js/three/GLTFLoader.js"></script>
+  <script src="js/three/three-vrm.js"></script>
+  <script src="js/three/tween.umd.js"></script>
+  <script src="js/three/OrbitControls.js"></script>
+
+  <script src="js/other/filters.js"></script>
+  <script src="js/other/peerjs.min.js"></script>
+  
+  <script src="js/util.js"></script>
+  <script src="js/VRMManager.js"></script>
+
+  <script src="js/WorkerManager.js"></script>
+  <script src="js/facemesh-handler.js"></script>
+  <script src="js/posenet-handler.js"></script>
+  <script src="js/handpose-handler.js"></script>
+
+  <script>
+    // Options
+    //////////
+    const canvas = document.getElementById("webcam");
+    const ctx = canvas.getContext("2d");
+    const overlay = document.getElementById("overlay");
+    const overlayCtx = overlay.getContext("2d");
+    const overlay2 = document.getElementById("overlay2");
+    const overlay2Ctx = overlay2.getContext("2d");
+    const overlay3 = document.getElementById("overlay3");
+    const overlay3Ctx = overlay3.getContext("2d");
+
+    const rightEyeCanvas = document.getElementById("right-eye");
+    const rightEyeCtx = rightEyeCanvas.getContext("2d");
+    const leftEyeCanvas = document.getElementById("left-eye");
+    const leftEyeCtx = leftEyeCanvas.getContext("2d");
+
+    const inputs = {
+      blink: document.getElementById("auto-blink"),
+      posenet: document.getElementById("posenet"),
+      handpose: document.getElementById("handpose")
+    };
+
+    linkHide(inputs.blink, [document.getElementById("blink-options")], false);
+    linkHide(inputs.posenet, [overlay2]);
+    linkHide(inputs.handpose, [overlay3]);
+
+    linkInputs(inputs);
+
+    const video = document.getElementById("camera");
+    video.width = 640;
+    video.height = 480;
+    video.addEventListener("loadedmetadata", () => {
+      linkSizes([canvas, overlay, overlay2, overlay3], video);
+      renderer.setSize(video.width, video.height);
+      camera.aspect = video.width / video.height;
+      camera.updateProjectionMatrix();
+    });
+
+    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+      video.srcObject = stream;
+    });
+
+    // three.js
+    ///////////
+    const defaultWidth = 640, defaultHeight = 480;
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("model") });
+    renderer.setClearColor(0x00FF00, 1);
+    renderer.setSize(defaultWidth, defaultHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+
+    const camera = new THREE.PerspectiveCamera(30, defaultWidth / defaultHeight, 0.1, 20.0);
+    camera.position.set(0.0, 1.5, 3.0);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.screenSpacePanning = true;
+    controls.target.set(0.0, 1.0, 0.0);
+    controls.update();
+
+    const scene = new THREE.Scene();
+
+    const light = new THREE.DirectionalLight(0xffffff);
+    light.position.set(1.0, 1.0, 1.0).normalize();
+    scene.add(light);
+
+    // var lookAtTarget = new THREE.Object3D();
+    // camera.add(lookAtTarget);
+
+    const loader = new THREE.GLTFLoader();
+    loader.crossOrigin = "anonymous";
+    var currentVrm, vrmManager;
+
+    loader.load(
+      "three-vrm-girl.vrm",
+      gltf => {
+        THREE.VRMUtils.removeUnnecessaryJoints(gltf.scene);
+
+        THREE.VRM.from(gltf).then(vrm => {
+          currentVrm = vrm;
+          vrmManager = new VRMManager(vrm);
+
+          vrmManager.rotation(Bone.Hips).y = Math.PI;
+
+          vrmManager.rotation(Bone.RightHand).x = Math.PI / 6;
+          vrmManager.rotation(Bone.LeftHand).x = Math.PI / 6;
+
+          vrmManager.rotation(Bone.RightUpperArm).z = rad(-75);
+          vrmManager.rotation(Bone.RightLowerArm).z = rad(-10);
+          vrmManager.rotation(Bone.LeftUpperArm).z = rad(75);
+          vrmManager.rotation(Bone.LeftLowerArm).z = rad(10);
+
+          // vrm.lookAt.target = lookAtTarget;
+
+          scene.add(vrm.scene);
+        });
+      },
+      progress => console.log("Loading... ", 100.0 * (progress.loaded / progress.total), "%"),
+      error => console.error(error)
+    );
+
+    const gridHelper = new THREE.GridHelper(10, 10);
+    scene.add(gridHelper);
+
+    const clock = new THREE.Clock();
+
+    // PeerJS
+    /////////
+    var peer = new Peer({
+      host: "127.0.0.1",
+      port: 9000
+    });
+
+    peer.on("open", id => {
+      console.log("PeerJS Connected", id);
+    });
+
+    function call() {
+      const input = document.getElementById("dest-id");
+      peer.call(input.value, document.getElementById("model").captureStream());
+    }
+
+    // Workers
+    //////////
+    var leftWrist, rightWrist;
+
+    const workerManager = new WorkerManager();
+    workerManager.registerHandler("facemesh", facemeshMessage);
+    workerManager.registerHandler("posenet", posenetMessage);
+    workerManager.registerHandler("handpose", handposeMessage);
+    workerManager.startAll();
+
+    // Draw Loop
+    ////////////
+    function animate() {
+      // Workers
+      //////////
+      ctx.drawImage(video, 0, 0);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      workerManager.postMessage("facemesh", imageData);
+
+      if (inputs.posenet.checked) workerManager.postMessage("posenet", imageData);
+
+      if (inputs.handpose.checked) workerManager.postMessage("handpose", imageData);
+
+      // VRM
+      //////
+      const deltaTime = clock.getDelta();
+
+      if (currentVrm) {
+        currentVrm.update(deltaTime);
+        TWEEN.update();
+      }
+
+      renderer.render(scene, camera);
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Window Listeners
+    ///////////////////
+    // window.addEventListener("resize", () => {
+    //     renderer.setPixelRatio(window.devicePixelRatio);
+    //     renderer.setSize(window.innerWidth, window.innerHeight);
+    //     camera.aspect = window.innerWidth / window.innerHeight;
+    //     camera.updateProjectionMatrix();
+    // });
+  </script>
+</body>
+
+</html>

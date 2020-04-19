@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>openvtuber Peer.JS Connection</title>
+</head>
+<body>
+    <script src="js/peerjs.min.js"></script>
+
+    <p id="peer">Peer connection is initializing...</p>
+    <video id="model" autoplay></video>
+    
+    <script>
+        const peerText = document.getElementById("peer");
+
+        var peer = new Peer({
+            host: "127.0.0.1",
+            port: 9000
+        });
+
+        peer.on("open", id => {
+            peerText.innerHTML = "Peer ID: " + id;
+        });
+
+        peer.on("call", call => {
+            console.log("Incoming call");
+
+            call.on("stream", stream => {
+                console.log("Stream");
+                peerText.style.display = "none";
+                document.getElementById("model").srcObject = stream;
+            });
+
+            call.on("close", () => {
+                peerText.style.display = "";
+            });
+
+            call.answer();
+        });
+    </script>
+</body>
+</html>
