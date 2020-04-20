@@ -10,12 +10,16 @@ var armRotation = {
 };
 
 function updateRotation(rotation) {
-    vrmManager.rotation(Bone.RightUpperArm).y = rotation.rightUpperY;
-    vrmManager.rotation(Bone.RightUpperArm).z = rotation.rightUpperZ;
+    const rightUpper = vrmManager.rotation(Bone.RightUpperArm);
+    rightUpper.y = rotation.rightUpperY;
+    rightUpper.x = -rotation.rightUpperY / 1.5;
+    rightUpper.z = rotation.rightUpperZ;
     vrmManager.rotation(Bone.RightLowerArm).z = rotation.rightLower - rotation.rightUpperZ;
 
-    vrmManager.rotation(Bone.LeftUpperArm).y = rotation.leftUpperY;
-    vrmManager.rotation(Bone.LeftUpperArm).z = rotation.leftUpperZ;
+    const leftUpper = vrmManager.rotation(Bone.LeftUpperArm);
+    leftUpper.y = rotation.leftUpperY;
+    leftUpper.x = rotation.leftUpperY / 1.5;
+    leftUpper.z = rotation.leftUpperZ;
     vrmManager.rotation(Bone.LeftLowerArm).z = rotation.leftLower - rotation.leftUpperZ;
 }
 

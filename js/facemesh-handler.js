@@ -32,11 +32,21 @@ function facemeshMessage(e) {
         const mouthBottom = mesh[14];
         const mouthHeight = distance3d(mouthTop, mouthBottom);
 
-        vrmManager.tween(head, { x: pitch, y: yaw, z: roll, mouth: mouthHeight / mouthWidth }, () => {
+        vrmManager.tween(head, {
+            x: pitch + Math.PI / 2,
+            y: yaw,
+            z: roll,
+            mouth: mouthHeight / mouthWidth
+        }, () => {
             var neckNode = vrmManager.rotation(Bone.Neck);
-            neckNode.x = head.x + Math.PI / 2;
+            neckNode.x = head.x;
             neckNode.y = head.y;
             neckNode.z = head.z;
+
+            var chestNode = vrmManager.rotation(Bone.Spine);
+            chestNode.x = head.x / 3;
+            chestNode.y = head.y / 2;
+            chestNode.z = head.z / 1.5;
 
             vrmManager.setPreset(Preset.A, head.mouth);
         }, "head", null, 100);

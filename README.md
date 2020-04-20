@@ -18,6 +18,7 @@ This app was tested on a Ryzen APU and took 60-80% of the GPU running all the mo
 * tween.js
 * canvasfilters (filters.js)
 * peerjs
+* stats.js
 
 PoseNet solution using atan2 was inspired by [atskimura](https://gist.github.com/atskimura/198e558e0eff94774892d4ee9e22f98e)
 
