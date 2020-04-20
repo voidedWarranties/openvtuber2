@@ -74,6 +74,8 @@ function handposeMessage(e) {
     });
 
     drawHand(data.hands, overlay3Ctx, side === "left" ? "#0f0" : "cyan");
+
+    stats.handpose.end();
 }
 
 function getFinger(side, finger) {

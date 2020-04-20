@@ -8,6 +8,7 @@
 
 <body>
   <div id="options">
+    <div id="stats"></div>
     <ul>
       <li><input class="option" id="auto-blink" type="checkbox" checked> Automatically Blink</li>
       <li><input class="option" id="facemesh" type="checkbox" checked> Enable FaceMesh Detection</li>
@@ -51,6 +52,7 @@
 
   <script src="js/other/filters.js"></script>
   <script src="js/other/peerjs.min.js"></script>
+  <script src="js/other/stats.min.js"></script>
   
   <script src="js/util.js"></script>
   <script src="js/VRMManager.js"></script>
@@ -77,6 +79,20 @@
     const rightEyeCtx = rightEyeCanvas.getContext("2d");
     const leftEyeCanvas = document.getElementById("left-eye");
     const leftEyeCtx = leftEyeCanvas.getContext("2d");
+
+    const threads = ["main", "facemesh", "posenet", "handpose"];
+    var stats = {};
+    const statsDiv = document.getElementById("stats");
+
+    threads.forEach(thread => {
+      var panel = new Stats();
+      panel.showPanel(0);
+      panel.dom.style.position = "relative";
+      panel.dom.style.display = "inline-block";
+      statsDiv.appendChild(panel.dom);
+
+      stats[thread] = panel;
+    });
 
     const options = new OptionsManager();
 
@@ -196,15 +212,26 @@
     function animate() {
       // Workers
       //////////
+      stats.main.begin();
+
       ctx.drawImage(video, 0, 0);
 
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-      if (options.get("facemesh")) workerManager.postMessage("facemesh", imageData);
+      if (options.get("facemesh")) {
+        stats.facemesh.begin();
+        workerManager.postMessage("facemesh", imageData);
+      }
 
-      if (options.get("posenet")) workerManager.postMessage("posenet", imageData);
+      if (options.get("posenet")) {
+        stats.posenet.begin();
+        workerManager.postMessage("posenet", imageData);
+      }
 
-      if (options.get("handpose")) workerManager.postMessage("handpose", imageData);
+      if (options.get("handpose")) {
+        stats.handpose.begin();
+        workerManager.postMessage("handpose", imageData);
+      }
 
       // VRM
       //////
@@ -218,6 +245,8 @@
       renderer.render(scene, camera);
 
       requestAnimationFrame(animate);
+
+      stats.main.end();
     }
 
     animate();

@@ -84,4 +84,6 @@ function facemeshMessage(e) {
             }
         }
     }
+
+    stats.facemesh.end();
 }

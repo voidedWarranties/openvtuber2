@@ -12,7 +12,7 @@ body {
 }
 
 #content {
-    margin-left: 320px;
+    margin-left: 340px;
 }
 
 #overlay,
@@ -27,7 +27,7 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 300px;
+    width: 320px;
     height: 100%;
     overflow: hidden;
     background-color: #182740;

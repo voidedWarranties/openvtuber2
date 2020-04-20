@@ -72,4 +72,6 @@ function posenetMessage(e) {
             });
         }
     }
+
+    stats.posenet.end();
 }
