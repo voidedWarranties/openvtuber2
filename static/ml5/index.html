@@ -5,7 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ml5</title>
+    <link rel="stylesheet" type="text/css" href="../css/common.css">
+
     <style>
+        button {
+            margin: 4px 2px;
+        }
+
         #video {
             position: relative;
         }
@@ -14,6 +20,14 @@
             position: absolute;
             top: 0;
             left: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        p {
+            white-space: pre-line;
         }
     </style>
 </head>
@@ -25,20 +39,43 @@
         <canvas id="overlay"></canvas>
     </div>
 
-    <button onclick="addExample(rightEyeCanvas, 'open')">Open</button>
-    <button onclick="addExample(rightEyeCanvas, 'closed')">Closed</button>
-    <button onclick="addExample(leftEyeCanvas, 'open')">Open Left</button>
-    <button onclick="addExample(leftEyeCanvas, 'closed')">Closed Left</button>
+    <p id="info"></p>
+
     <input id="classify" type="checkbox"> Classify
-    <button onclick="save()">Save</button>
-    <button onclick="load()">Load</button>
-    <button onclick="train()">Train</button>
-    <canvas id="right-eye" style="display: block;"></canvas>
-    <canvas id="left-eye" style="display: block;"></canvas>
-    <p id="info" style="white-space: pre-line;"></p>
-    <p id="left-info" style="white-space: pre-line;"></p>
+
+    <div id="training">
+        <h4>Training</h4>
+        <button onclick="addExample(rightEyeCanvas, 'open')">Open (right)</button>
+        <button onclick="addExample(rightEyeCanvas, 'closed')">Closed (right)</button>
+        <button onclick="addExample(leftEyeCanvas, 'open')">Open (left)</button>
+        <button onclick="addExample(leftEyeCanvas, 'closed')">Closed (left)</button>
+        <br>
+        <button onclick="train()">Train</button>
+    </div>
+
+    <div id="saving">
+        <h4>Saving/Loading</h4>
+        <button onclick="saveData()">Save Training Data</button>
+        <input type="file" id="file" name="file" style="display: none;" multiple>
+        <button><label for="file">Load Training Data</label></button>
+        <br>
+        <button onclick="save()">Save Model</button>
+        <button onclick="load()">Load Model</button>
+    </div>
+
+    <div id="info">
+        <h4>Right Eye</h4>
+        <canvas id="right-eye"></canvas>
+        <p id="right-info"></p>
+
+        <h4>Left Eye</h4>
+        <canvas id="left-eye"></canvas>
+        <p id="left-info"></p>
+    </div>
 
     <script src="https://unpkg.com/ml5@0.4.3/dist/ml5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.3.0/jszip.min.js"></script>
+    <script src="https://unpkg.com/file-saver@2.0.2/dist/FileSaver.min.js"></script>
     <script src="../js/util.js"></script>
     <script src="../js/WorkerManager.js"></script>
 
@@ -56,6 +93,7 @@
 
         const classify = document.getElementById("classify");
         const info = document.getElementById("info");
+        const rightInfo = document.getElementById("right-info");
         const leftInfo = document.getElementById("left-info");
 
         const video = document.getElementById("camera");
@@ -73,19 +111,58 @@
             epochs: 50
         };
 
-        const featureExtractor = ml5.featureExtractor("MobileNet", featureExtractorOptions, () => { console.log("MobileNet Loaded") });
+        const featureExtractor = ml5.featureExtractor("MobileNet", featureExtractorOptions, () => info.innerHTML = "MobileNet Loaded");
         const predictor = featureExtractor.classification();
+        const zip = new JSZip();
 
         function addExample(canvas, label) {
             predictor.addImage(canvas, label);
+
+            const folder = zip.folder(label);
+
+            canvas.toBlob(blob => {
+                folder.file(Date.now() + ".png", blob);
+            });
+        }
+
+        function saveData() {
+            zip.generateAsync({ type: "blob" }).then(content => {
+                saveAs(content, "data.zip");
+            });
+        }
+
+        function loadFile(f) {
+            JSZip.loadAsync(f).then(zip => {
+                zip.forEach((path, zipEntry) => {
+                    if (!zipEntry.dir) {
+                        zipEntry.async("base64").then(b64 => {
+                            const dataURI = "data:image/png;base64," + b64;
+                            const pathArr = path.split("/");
+
+                            const img = new Image();
+                            img.onload = () => {
+                                predictor.addImage(img, pathArr[0]);
+                            };
+                            img.src = dataURI;
+                        });
+                    }
+                });
+            });
+        }
+
+        document.getElementById("file").onchange = e => {
+            const files = e.target.files;
+            for (var i = 0; i < files.length; i++) {
+                loadFile(files[i]);
+            }
         }
 
         function save() {
-            predictor.save(() => { console.log("Saved") }, "data");
+            predictor.save(() => info.innerHTML = "Saved", "data");
         }
 
         function load() {
-            predictor.load("../data.json", () => console.log("Loaded"));
+            predictor.load("../data.json", () => info.innerHTML = "Model Loaded");
         }
 
         function train() {
@@ -139,7 +216,7 @@
 
                 if (classify.checked) {
                     predictor.classify(rightEyeCanvas).then(res => {
-                        info.innerHTML = getInfoHTML(res);
+                        rightInfo.innerHTML = getInfoHTML(res);
                     });
 
                     predictor.classify(leftEyeCanvas).then(res => {
