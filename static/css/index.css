@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+body {
+    font-family: "Roboto", sans-serif;
+    background-color: #182757;
+    color: white;
+}
+
+#camera, #model {
+    position: relative;
+    display: inline-block;
+}
+
+#content {
+    margin-left: 340px;
+}
+
+#overlay,
+#overlay2,
+#overlay3 {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#options {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 320px;
+    height: 100%;
+    overflow: hidden;
+    background-color: #182740;
+    padding: 10px;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}

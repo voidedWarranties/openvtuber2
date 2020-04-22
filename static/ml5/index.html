@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ml5</title>
+    <style>
+        #video {
+            position: relative;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <video id="camera" style="display: none;" playsinline autoplay muted></video>
+    <div id="video">
+        <canvas id="webcam"></canvas>
+        <canvas id="overlay"></canvas>
+    </div>
+
+    <button onclick="addExample(rightEyeCanvas, 'open')">Open</button>
+    <button onclick="addExample(rightEyeCanvas, 'closed')">Closed</button>
+    <button onclick="addExample(leftEyeCanvas, 'open')">Open Left</button>
+    <button onclick="addExample(leftEyeCanvas, 'closed')">Closed Left</button>
+    <input id="classify" type="checkbox"> Classify
+    <button onclick="save()">Save</button>
+    <button onclick="load()">Load</button>
+    <button onclick="train()">Train</button>
+    <canvas id="right-eye" style="display: block;"></canvas>
+    <canvas id="left-eye" style="display: block;"></canvas>
+    <p id="info" style="white-space: pre-line;"></p>
+    <p id="left-info" style="white-space: pre-line;"></p>
+
+    <script src="https://unpkg.com/ml5@0.4.3/dist/ml5.min.js"></script>
+    <script src="../js/util.js"></script>
+    <script src="../js/WorkerManager.js"></script>
+
+    <script>
+        const canvas = document.getElementById("webcam");
+        const ctx = canvas.getContext("2d");
+        const overlay = document.getElementById("overlay");
+        const overlayCtx = overlay.getContext("2d");
+
+        const rightEyeCanvas = document.getElementById("right-eye");
+        const rightEyeCtx = rightEyeCanvas.getContext("2d");
+
+        const leftEyeCanvas = document.getElementById("left-eye");
+        const leftEyeCtx = leftEyeCanvas.getContext("2d");
+
+        const classify = document.getElementById("classify");
+        const info = document.getElementById("info");
+        const leftInfo = document.getElementById("left-info");
+
+        const video = document.getElementById("camera");
+        video.width = 640;
+        video.height = 480;
+        video.addEventListener("loadedmetadata", () => {
+            linkSizes([canvas, overlay], video);
+        });
+
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+            video.srcObject = stream;
+        });
+
+        const featureExtractorOptions = {
+            epochs: 50
+        };
+
+        const featureExtractor = ml5.featureExtractor("MobileNet", featureExtractorOptions, () => { console.log("MobileNet Loaded") });
+        const predictor = featureExtractor.classification();
+
+        function addExample(canvas, label) {
+            predictor.addImage(canvas, label);
+        }
+
+        function save() {
+            predictor.save(() => { console.log("Saved") }, "data");
+        }
+
+        function load() {
+            predictor.load("../data.json", () => console.log("Loaded"));
+        }
+
+        function train() {
+            predictor.train(loss => {
+                if (loss) {
+                    info.innerHTML = "Loss: " + loss;
+                } else {
+                    info.innerHTML = "Training complete";
+                }
+            });
+        }
+
+        const colors = {
+            open: "#0f0",
+            closed: "red"
+        };
+
+        function getInfoHTML(res) {
+            var infoTxt = "";
+            res.forEach(stat => {
+                const label = stat.label;
+                infoTxt += `<span style="background-color: ${colors[label]};">${label}</span>: ${stat.confidence}\n`;
+            });
+
+            return infoTxt;
+        }
+
+        function facemeshMessage(e) {
+            overlayCtx.clearRect(0, 0, overlay.width, overlay.height);
+            const data = e.data;
+
+            const face = data.faces[0];
+
+            if (face) {
+                const mesh = face.scaledMesh;
+
+                mesh.forEach(point => drawPoint(overlayCtx, point[0], point[1], 1.5, "#36f"));
+
+                const rightEyeImg = clipEyeImage(ctx, mesh, 159, 145, 33, 133);
+                linkSize(rightEyeCanvas, rightEyeImg);
+                rightEyeCtx.putImageData(rightEyeImg, 0, 0);
+
+                const leftEyeImg = clipEyeImage(ctx, mesh, 386, 374, 362, 263);
+                const tempCanvas = document.createElement("canvas");
+                const tempCtx = tempCanvas.getContext("2d");
+                linkSizes([leftEyeCanvas, tempCanvas], leftEyeImg);
+                tempCtx.putImageData(leftEyeImg, 0, 0);
+
+                leftEyeCtx.scale(-1, 1);
+                leftEyeCtx.drawImage(tempCanvas, 0, 0, -leftEyeCanvas.width, leftEyeCanvas.height);
+
+                if (classify.checked) {
+                    predictor.classify(rightEyeCanvas).then(res => {
+                        info.innerHTML = getInfoHTML(res);
+                    });
+
+                    predictor.classify(leftEyeCanvas).then(res => {
+                        leftInfo.innerHTML = getInfoHTML(res);
+                    });
+                }
+            }
+        }
+
+        const workerManager = new WorkerManager();
+        workerManager.workers = {
+            facemesh: "../js/facemesh-worker.js"
+        };
+        workerManager.registerHandler("facemesh", facemeshMessage);
+        workerManager.start("facemesh");
+
+        function animate() {
+            ctx.drawImage(video, 0, 0);
+            workerManager.postMessage("facemesh", ctx.getImageData(0, 0, canvas.width, canvas.height));
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>

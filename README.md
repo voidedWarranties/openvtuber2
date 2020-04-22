@@ -6,8 +6,10 @@ the new version is much better suited to bad lighting or webcams and has basic s
 
 ### running
 This apps starts a PeerJS server, enabling it to be recorded by an OBS browser capture.
-You must run it through Electron, not by opening `index.html`.
+You must run it through Express, not by opening `index.html`.
 Install node.js (tested with v12), open a command prompt in the downloaded directory and run `npm install` followed by `npm start`.
+
+Open the app by going to http://localhost:9000/
 
 This app was tested on a Ryzen APU and took 60-80% of the GPU running all the models at once.
 
@@ -17,7 +19,8 @@ This app was tested on a Ryzen APU and took 60-80% of the GPU running all the mo
 * three-vrm + their default model
 * tween.js
 * canvasfilters (filters.js)
-* peerjs
+* express + peerjs
+* ml5
 * stats.js
 
 PoseNet solution using atan2 was inspired by [atskimura](https://gist.github.com/atskimura/198e558e0eff94774892d4ee9e22f98e)
@@ -60,4 +63,3 @@ It also provides coordinates in 3D, making calculating the rotation much easier.
 (It is worth mentioning that Facemesh tends to handle rolling your head pretty poorly).
 Starting all the models can take a minute or more, and this is likely due to the way tfjs initializes the models.
 Due to this and other tracking issues with posenet and handpose, they are disabled by default.
-The blink detection is disabled by default because the values for thresholding and brightness/contrast are hardcoded and it is almost impossible to use without constantly monitoring the app.
