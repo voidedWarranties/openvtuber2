@@ -12,6 +12,7 @@
     <div id="stats"></div>
     <ul>
       <li><input class="option" id="auto-blink" type="checkbox" checked> Automatically Blink</li>
+      <li><input class="option" id="eye-track" type="checkbox"> Eye Tracking</li>
       <li><input class="option" id="facemesh" type="checkbox" checked> Enable FaceMesh Detection</li>
       <li><input class="option" id="posenet" type="checkbox"> Enable PoseNet Detection</li>
       <li><input class="option" id="handpose" type="checkbox"> Enable HandPose Detection</li>
@@ -21,7 +22,7 @@
       <input id="dest-id" type="text" placeholder="Peer Connection ID">
       <button onclick="call()">Call</button>
     </div>
-    
+
     <br>
 
     <div id="blink-options" style="display: none;">
@@ -43,6 +44,8 @@
       <canvas id="overlay2"></canvas>
       <canvas id="overlay3"></canvas>
     </div>
+
+    <canvas id="eyes" style="display: none;"></canvas>
   </div>
 
   <script src="js/three/three.js"></script>
@@ -54,7 +57,8 @@
   <script src="js/other/filters.js"></script>
   <script src="js/other/peerjs.min.js"></script>
   <script src="js/other/stats.min.js"></script>
-  
+  <script src="js/other/lploc.js"></script>
+
   <script src="js/util.js"></script>
   <script src="js/VRMManager.js"></script>
 
@@ -80,6 +84,9 @@
     const rightEyeCtx = rightEyeCanvas.getContext("2d");
     const leftEyeCanvas = document.getElementById("left-eye");
     const leftEyeCtx = leftEyeCanvas.getContext("2d");
+
+    const eyesCanvas = document.getElementById("eyes");
+    const eyesCtx = eyesCanvas.getContext("2d");
 
     const threads = ["main", "facemesh", "posenet", "handpose"];
     var stats = {};
@@ -110,7 +117,7 @@
     video.width = 640;
     video.height = 480;
     video.addEventListener("loadedmetadata", () => {
-      linkSizes([canvas, overlay, overlay2, overlay3], video);
+      linkSizes([canvas, overlay, overlay2, overlay3, eyesCanvas], video);
       renderer.setSize(video.width, video.height);
       camera.aspect = video.width / video.height;
       camera.updateProjectionMatrix();
@@ -119,6 +126,15 @@
     navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
       video.srcObject = stream;
     });
+
+    var do_puploc = function (r, c, s, nperturbs, pixels, nrows, ncols, ldim) { return [-1.0, -1.0]; };
+
+    fetch("js/other/puploc.bin").then(res => res.arrayBuffer())
+      .then(buffer => {
+        var bytes = new Int8Array(buffer);
+        do_puploc = lploc.unpack_localizer(bytes);
+        console.log("* puploc loaded");
+      });
 
     // three.js
     ///////////
@@ -142,8 +158,8 @@
     light.position.set(1.0, 1.0, 1.0).normalize();
     scene.add(light);
 
-    // var lookAtTarget = new THREE.Object3D();
-    // camera.add(lookAtTarget);
+    var lookAtTarget = new THREE.Object3D();
+    camera.add(lookAtTarget);
 
     const loader = new THREE.GLTFLoader();
     loader.crossOrigin = "anonymous";
@@ -168,7 +184,7 @@
           vrmManager.rotation(Bone.LeftUpperArm).z = rad(75);
           vrmManager.rotation(Bone.LeftLowerArm).z = rad(10);
 
-          // vrm.lookAt.target = lookAtTarget;
+          vrm.lookAt.target = lookAtTarget;
 
           scene.add(vrm.scene);
         });

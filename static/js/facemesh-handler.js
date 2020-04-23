@@ -10,6 +10,38 @@ function resetEye() {
     leftEyeData = [];
 }
 
+function rgba_to_grayscale(rgba, nrows, ncols) {
+    var gray = new Uint8Array(nrows * ncols);
+    for (var r = 0; r < nrows; ++r)
+        for (var c = 0; c < ncols; ++c)
+            gray[r * ncols + c] = (2 * rgba[r * 4 * ncols + 4 * c + 0] + 7 * rgba[r * 4 * ncols + 4 * c + 1] + 1 * rgba[r * 4 * ncols + 4 * c + 2]) / 10;
+    return gray;
+}
+
+function getPupil(mesh, top, right, left, gray) {
+    const row = mesh[top][1];
+    const col = mesh[right][0];
+    const width = Math.abs(mesh[left][0] - mesh[right][0]);
+    const scale = 2 * width;
+
+    const [r, c] = do_puploc(row, col, scale, 7, gray);
+
+    const relativeCol = c - col;
+    const ratio = relativeCol / width;
+
+    return {
+        r, c, ratio
+    };
+}
+
+const right = [
+    33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7
+];
+
+const left = [
+    263, 466, 388, 387, 386, 385, 384, 398, 362, 382, 381, 380, 374, 373, 390, 249
+];
+
 var nextBlinkTS = 0;
 
 function facemeshMessage(e) {
@@ -91,6 +123,39 @@ function facemeshMessage(e) {
 
                 if (zScoreLeft <= -1.5) vrmManager.setPreset(Preset.BlinkL, 1);
                 else vrmManager.setPreset(Preset.BlinkL, 0);
+            }
+        }
+
+        if (options.get("eye-track")) {
+            const leftPoints = left.map(i => mesh[i]);
+            const rightPoints = right.map(i => mesh[i]);
+
+            eyesCtx.clearRect(0, 0, eyesCanvas.width, eyesCanvas.height);
+            clip(eyesCtx, leftPoints, canvas);
+            clip(eyesCtx, rightPoints, canvas);
+
+            drawPolygon(overlayCtx, leftPoints, 1.5, "#36f");
+            drawPolygon(overlayCtx, rightPoints, 1.5, "#36f");
+
+            var rgba = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            var image = {
+                pixels: rgba_to_grayscale(rgba, canvas.height, canvas.width),
+                nrows: canvas.height,
+                ncols: canvas.width,
+                ldim: canvas.width
+            };
+
+            var r = getPupil(mesh, 159, 33, 133, image);
+            var l = getPupil(mesh, 386, 362, 263, image);
+
+            if (r.r >= 0 && r.c >= 0 && r.ratio >= 0
+                && l.r >= 0 && l.c >= 0 && l.ratio >= 0) {
+                drawPoint(overlayCtx, r.c, r.r, 2, "red");
+                drawPoint(overlayCtx, l.c, l.r, 2, "red");
+
+                const avgRatio = (l.ratio + r.ratio) / 2;
+
+                lookAtTarget.position.x = ((10 * avgRatio) - 5) * 5;
             }
         }
     }

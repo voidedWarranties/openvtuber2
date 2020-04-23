@@ -50,6 +50,9 @@
         <button onclick="addExample(leftEyeCanvas, 'open')">Open (left)</button>
         <button onclick="addExample(leftEyeCanvas, 'closed')">Closed (left)</button>
         <br>
+        <button onclick="addBoth('open')">Open (both)</button>
+        <button onclick="addBoth('closed')">Closed (both)</button>
+        <br>
         <button onclick="train()">Train</button>
     </div>
 
@@ -115,13 +118,18 @@
         const predictor = featureExtractor.classification();
         const zip = new JSZip();
 
-        function addExample(canvas, label) {
+        function addBoth(label) {
+            addExample(rightEyeCanvas, label, "right");
+            addExample(leftEyeCanvas, label, "left");
+        }
+
+        function addExample(canvas, label, side = "") {
             predictor.addImage(canvas, label);
 
             const folder = zip.folder(label);
 
             canvas.toBlob(blob => {
-                folder.file(Date.now() + ".png", blob);
+                folder.file(Date.now() + side + ".png", blob);
             });
         }
 
@@ -201,11 +209,11 @@
 
                 mesh.forEach(point => drawPoint(overlayCtx, point[0], point[1], 1.5, "#36f"));
 
-                const rightEyeImg = clipEyeImage(ctx, mesh, 159, 145, 33, 133);
+                const rightEyeImg = clipEyeImage(ctx, mesh, 27, 23, 130, 244);
                 linkSize(rightEyeCanvas, rightEyeImg);
                 rightEyeCtx.putImageData(rightEyeImg, 0, 0);
 
-                const leftEyeImg = clipEyeImage(ctx, mesh, 386, 374, 362, 263);
+                const leftEyeImg = clipEyeImage(ctx, mesh, 257, 253, 464, 359);
                 const tempCanvas = document.createElement("canvas");
                 const tempCtx = tempCanvas.getContext("2d");
                 linkSizes([leftEyeCanvas, tempCanvas], leftEyeImg);

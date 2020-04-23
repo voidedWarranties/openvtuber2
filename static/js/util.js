@@ -208,6 +208,37 @@ function drawPolyline(ctx, points, thickness, color) {
     ctx.stroke();
 }
 
+function drawPolygon(ctx, points, thickness, color) {
+    ctx.beginPath();
+    ctx.lineWidth = thickness;
+    ctx.strokeStyle = color;
+    const p1 = points[0];
+    ctx.moveTo(p1[0], p1[1]);
+
+    for (var i = 1; i < points.length; i++) {
+        const point = points[i];
+        ctx.lineTo(point[0], point[1]);
+    }
+    ctx.closePath();
+    ctx.stroke();
+}
+
+function clip(ctx, points, img) {
+    ctx.save();
+    ctx.beginPath();
+    const p1 = points[0];
+    ctx.moveTo(p1[0], p1[1]);
+
+    for (var i = 1; i < points.length; i++) {
+        const point = points[i];
+        ctx.lineTo(point[0], point[1]);
+    }
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(img, 0, 0);
+    ctx.restore();
+}
+
 function linkSizes(a, b) {
     a.forEach(obj => linkSize(obj, b));
 }
