@@ -163,7 +163,7 @@ function processEyeImage(img) {
     var brightness = Filters.brightnessContrast(img, 0.9, 5);
     var inverted = Filters.invert(brightness);
     var gaussian = Filters.gaussianBlur(inverted, 5);
-    var thresholded = Filters.threshold(gaussian, 90);
+    var thresholded = Filters.threshold(gaussian, options.get("threshold"));
 
     var data = thresholded.data;
     var whitePixels = 0;

@@ -10,6 +10,7 @@
 <body>
   <div id="options">
     <div id="stats"></div>
+    <hr>
     <ul>
       <li><input class="option" id="auto-blink" type="checkbox" checked> Automatically Blink</li>
       <li><input class="option" id="eye-track" type="checkbox"> Eye Tracking</li>
@@ -26,11 +27,20 @@
     <br>
 
     <div id="blink-options" style="display: none;">
+      <hr>
+      <h4>Blink Control</h4>
       <canvas id="right-eye"></canvas>
       <canvas id="left-eye"></canvas>
       <br>
+      <ul>
+        <li><input class="option" id="wink" type="checkbox" checked> Allow Winking</li>
+        <li><input class="option" id="threshold" type="range" min="0" max="255"><input id="threshold-manual"
+            type="number"> Threshold</li>
+      </ul>
       <button onclick="resetEye()">Reset Eye Data</button>
     </div>
+
+    <hr>
 
     <button onclick="window.localStorage.clear()">Clear local storage</button>
   </div>

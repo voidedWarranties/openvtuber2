@@ -13,17 +13,14 @@ Open the app by going to http://localhost:9000/
 
 This app was tested on a Ryzen APU and took 60-80% of the GPU running all the models at once.
 
-### libraries / references
-* tensorflow.js + prebuilt models - facemesh, posenet, handpose
-* three.js + GLTFLoader + OrbitControls
-* three-vrm + their default model
-* tween.js
-* canvasfilters (filters.js)
-* express + peerjs
-* ml5
-* stats.js
+### environment
+"Minimum" environment for good detection
 
-PoseNet solution using atan2 was inspired by [atskimura](https://gist.github.com/atskimura/198e558e0eff94774892d4ee9e22f98e)
+* Head, mouth: Pretty much anything will work
+* Arms, hands: To avoid awkward positioning, try to place the camera so only your shoulders and above are showing - camera quality doesn't matter much
+* Eye tracking, blinking: Webcam quality should be good enough to stream with your real face
+
+Generally, performance will degrade significantly with more than one model (facemesh, posenet, handpose) running at once
 
 ### recording
 ##### option 1 - display capture
@@ -36,7 +33,21 @@ A less finicky way to record the model is to create a "video call" through PeerJ
 3. Copy the key shown in the browser capture, paste it into the "PeerJS Connection ID" field in the main application, and click Call.
 4. Chroma key out the green background
 
-### tested technologies
+### libraries / references
+* tensorflow.js + prebuilt models - facemesh, posenet, handpose
+* three.js + GLTFLoader + OrbitControls
+* three-vrm + their default model
+* tween.js
+* canvasfilters (filters.js)
+* express + peerjs
+* ml5
+* JSZip, FileSaver.js
+* stats.js
+* lploc.js
+
+PoseNet solution using atan2 was inspired by [atskimura](https://gist.github.com/atskimura/198e558e0eff94774892d4ee9e22f98e)
+
+<!-- ### tested technologies
 mostly for any developers who are wondering about this kind of stuff
 ##### clmtrackr
 Across every app I've seen use clmtrackr, results were not consistent enough for purposes like this.
@@ -62,4 +73,4 @@ Facemesh is a lot better at keeping the eye keypoints around the user's eyes, me
 It also provides coordinates in 3D, making calculating the rotation much easier.
 (It is worth mentioning that Facemesh tends to handle rolling your head pretty poorly).
 Starting all the models can take a minute or more, and this is likely due to the way tfjs initializes the models.
-Due to this and other tracking issues with posenet and handpose, they are disabled by default.
+Due to this and other tracking issues with posenet and handpose, they are disabled by default. -->
