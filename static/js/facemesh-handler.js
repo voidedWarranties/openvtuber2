@@ -34,14 +34,6 @@ function getPupil(mesh, top, right, left, gray) {
     };
 }
 
-const right = [
-    33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7
-];
-
-const left = [
-    263, 466, 388, 387, 386, 385, 384, 398, 362, 382, 381, 380, 374, 373, 390, 249
-];
-
 // const faceIdxs = [
 //     168, 417, 441, 442, 443, 444, 445, 342, 446, 261, 346, 280, 425, 436, 432, 422, 424, 418, 421, 200, 201, 194, 204, 202, 212, 216, 205, 50, 117, 31, 226, 113, 225, 224, 223, 222, 221, 193
 // ];
@@ -95,13 +87,6 @@ function facemeshMessage(e) {
             vrmManager.setPreset(Preset.A, head.mouth);
         }, "head", null, 100);
 
-        const leftPoints = left.map(i => mesh[i]);
-        const rightPoints = right.map(i => mesh[i]);
-
-        eyesCtx.clearRect(0, 0, eyesCanvas.width, eyesCanvas.height);
-        clip(eyesCtx, leftPoints, canvas);
-        clip(eyesCtx, rightPoints, canvas);
-
         if (options.get("auto-blink")) {
             if (Date.now() > nextBlinkTS) {
                 vrmManager.setPreset(Preset.Blink, 1);
@@ -109,7 +94,7 @@ function facemeshMessage(e) {
             } else vrmManager.setPreset(Preset.Blink, 0);
         } else {
             // Right
-            const rightEyeImg = clipEyeImage(eyesCtx, mesh, 159, 145, 33, 133);
+            const rightEyeImg = clipEyeImage(ctx, mesh, 159, 145, 33, 133);
             const processedRightEye = processEyeImage(rightEyeImg);
 
             linkSize(rightEyeCanvas, rightEyeImg);
@@ -121,7 +106,7 @@ function facemeshMessage(e) {
             const zScoreRight = (processedRightEye.ratio - meanRight) / stdevRight;
 
             // Left
-            const leftEyeImg = clipEyeImage(eyesCtx, mesh, 386, 374, 362, 263);
+            const leftEyeImg = clipEyeImage(ctx, mesh, 386, 374, 362, 263);
             const processedLeftEye = processEyeImage(leftEyeImg);
 
             linkSize(leftEyeCanvas, leftEyeImg);

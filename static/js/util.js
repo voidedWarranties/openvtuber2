@@ -22,7 +22,7 @@ function distance(x1, y1, x2, y2) {
     const horiz = x2 - x1;
     const vert = y2 - y1;
 
-    return Math.sqrt((horiz*horiz) + (vert*vert));
+    return Math.sqrt((horiz * horiz) + (vert * vert));
 }
 
 function distanceP(p1, p2) {
@@ -34,7 +34,7 @@ function distance3d(p1, p2) {
     const vert = p2[1] - p1[1];
     const depth = p2[2] - p1[2];
 
-    return Math.sqrt((horiz*horiz) + (vert*vert) + (depth*depth));
+    return Math.sqrt((horiz * horiz) + (vert * vert) + (depth * depth));
 }
 
 function calcMean(data) {
@@ -100,7 +100,7 @@ function drawHand(data, overlayCtx, color) {
 
             var points = hand.annotations[key];
             points.unshift(hand.landmarks[0]);
-    
+
             drawPolyline(overlayCtx, points, 1, color);
         }
     });
@@ -121,7 +121,7 @@ function getAngle(a1, vertex, a2) {
 function getHeadRotation(overlayCtx, scaledMesh) {
     const faceRight = scaledMesh[127];
     const faceLeft = scaledMesh[356];
-    
+
     const faceTop = scaledMesh[10];
     const faceBottom = scaledMesh[200];
 
@@ -138,7 +138,7 @@ function getHeadRotation(overlayCtx, scaledMesh) {
 
     const pitchSlope = slope(2, 1, faceTop, faceBottom);
     var pitch = Math.atan(pitchSlope);
-    
+
     if (pitch > 0) {
         pitch -= Math.PI;
     }
@@ -146,7 +146,25 @@ function getHeadRotation(overlayCtx, scaledMesh) {
     return { roll, yaw, pitch };
 }
 
+const rightIdxs = [
+    33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7
+];
+
+const leftIdxs = [
+    263, 466, 388, 387, 386, 385, 384, 398, 362, 382, 381, 380, 374, 373, 390, 249
+];
+
 function clipEyeImage(ctx, mesh, top, bottom, right, left) {
+    const canvas = ctx.canvas;
+
+    const leftPoints = leftIdxs.map(i => mesh[i]);
+    const rightPoints = rightIdxs.map(i => mesh[i]);
+
+    const temp = new OffscreenCanvas(canvas.width, canvas.height);
+    const tempCtx = temp.getContext("2d");
+    clip(tempCtx, leftPoints, canvas);
+    clip(tempCtx, rightPoints, canvas);
+
     const eyeTop = mesh[top];
     const eyeBottom = mesh[bottom];
     const eyeRight = mesh[right];
@@ -155,7 +173,7 @@ function clipEyeImage(ctx, mesh, top, bottom, right, left) {
     const width = Math.abs(eyeRight[0] - eyeLeft[0]);
     const height = Math.abs(eyeTop[1] - eyeBottom[1]);
 
-    const img = ctx.getImageData(eyeRight[0], eyeTop[1], width, height);
+    const img = tempCtx.getImageData(eyeRight[0], eyeTop[1], width, height);
     return img;
 }
 
@@ -252,7 +270,7 @@ function linkSize(a, b) {
 function linkInputs(inputs) {
     for (var key in inputs) {
         if (!inputs.hasOwnProperty(key)) continue;
-  
+
         const input = inputs[key];
         if (input.type === "range") {
             const manual = document.getElementById(input.id + "-manual");
@@ -260,7 +278,7 @@ function linkInputs(inputs) {
                 manual.value = input.value;
                 manual.min = input.min;
                 manual.max = input.max;
-    
+
                 input.onchange = e => manual.value = input.value;
                 manual.onchange = e => input.value = manual.value;
             }
