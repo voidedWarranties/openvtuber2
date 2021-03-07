@@ -98,6 +98,8 @@
     const eyesCanvas = document.getElementById("eyes");
     const eyesCtx = eyesCanvas.getContext("2d");
 
+    const defaultWidth = 640, defaultHeight = 480;
+
     const threads = ["main", "facemesh", "posenet", "handpose"];
     var stats = {};
     const statsDiv = document.getElementById("stats");
@@ -124,8 +126,8 @@
     options.load();
 
     const video = document.getElementById("camera");
-    video.width = 640;
-    video.height = 480;
+    video.width = defaultWidth;
+    video.height = defaultHeight;
     video.addEventListener("loadedmetadata", () => {
       linkSizes([canvas, overlay, overlay2, overlay3, eyesCanvas], video);
       renderer.setSize(video.width, video.height);
@@ -133,7 +135,12 @@
       camera.updateProjectionMatrix();
     });
 
-    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+    navigator.mediaDevices.getUserMedia({
+      video: {
+        width: defaultWidth,
+        height: defaultHeight
+      }
+    }).then(stream => {
       video.srcObject = stream;
     });
 
@@ -148,7 +155,6 @@
 
     // three.js
     ///////////
-    const defaultWidth = 640, defaultHeight = 480;
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("model") });
     renderer.setClearColor(0x00FF00, 1);
     renderer.setSize(defaultWidth, defaultHeight);
